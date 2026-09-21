@@ -1,3 +1,9 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unreachable
+)]
 //! 公共 API 表面：类型存在、`Send + Sync`、关键签名与 re-export 可用。
 
 use std::time::Duration;

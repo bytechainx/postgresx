@@ -1,3 +1,9 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unreachable
+)]
 //! 纯函数行为：SQLSTATE 映射、重试判定、事务状态、迁移 checksum 与状态计算。
 
 use std::time::Duration;
