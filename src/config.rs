@@ -837,7 +837,14 @@ fn split_host_port(hostport: &str) -> PostgresResult<(String, u16)> {
         let (host, tail) = rest
             .split_once(']')
             .ok_or_else(|| PostgresError::Config("URL IPv6 主机缺少 `]`".to_string()))?;
-        let port = parse_url_port(tail.strip_prefix(':').unwrap_or(""))?;
+        // `]` 之后只允许 `:port` 或直接结束；其余内容一律报错，不静默丢弃——
+        // 与下方 hostname 分支对非法端口 fail-loud 的行为保持一致。
+        let port = match tail {
+            "" => DEFAULT_PORT,
+            _ => parse_url_port(tail.strip_prefix(':').ok_or_else(|| {
+                PostgresError::Config(format!("URL IPv6 主机后存在多余内容: `{tail}`"))
+            })?)?,
+        };
         return Ok((host.to_owned(), port));
     }
     match hostport.rsplit_once(':') {
@@ -1030,6 +1037,33 @@ mod tests {
         assert_eq!(config.port, DEFAULT_PORT);
         assert_eq!(config.database, "db");
         assert!(config.password().is_empty());
+    }
+
+    #[test]
+    fn url_ipv6_parses_port_forms() {
+        let with_port =
+            PostgresConfig::from_url("postgres://u@[::1]:6543/db").expect("IPv6 带端口");
+        assert_eq!(with_port.host, "::1");
+        assert_eq!(with_port.port, 6543);
+
+        // `[::1]:` 与主机名形式的 `host:` 行为一致：端口为空回落到默认端口。
+        let empty_port = PostgresConfig::from_url("postgres://u@[::1]:/db").expect("空端口");
+        assert_eq!(empty_port.host, "::1");
+        assert_eq!(empty_port.port, DEFAULT_PORT);
+    }
+
+    /// `]` 之后只允许 `:port` 或直接结束。
+    ///
+    /// 回归保护：此前该位置的非 `:` 文本会被**静默丢弃**——`postgres://u@[::1]junk/db`
+    /// 会被接受并解析成 `host=::1`（实测确认），而**同一个函数的 hostname 分支**对
+    /// `host:notaport` 会报错。两条分支行为不一致，且前者是静默的，属于「本地接受
+    /// 畸形输入、问题推迟到运行期」这一类。
+    #[test]
+    fn url_ipv6_rejects_trailing_junk() {
+        assert!(PostgresConfig::from_url("postgres://u@[::1]junk/db").is_err());
+        assert!(PostgresConfig::from_url("postgres://u@[::1]:notaport/db").is_err());
+        // 缺少 `]` 同样必须报错。
+        assert!(PostgresConfig::from_url("postgres://u@[::1/db").is_err());
     }
 
     #[test]
