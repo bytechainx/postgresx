@@ -380,9 +380,14 @@ impl PostgresConfig {
     /// `password` 被 `serde` 跳过，**不**从 TOML 读取；若进程环境存在
     /// [`ENV_PASSWORD`]，解析后自动注入。未知键（含误写的 `password`）一律报错，
     /// 避免拼写错误被静默忽略。
+    ///
+    /// 解析失败时只回传 `toml` 的错误**消息**（`message()`），不带 span 与出错源码行：
+    /// `Display` 会把整行配置原文（可能含 `password = "…"`）带进错误消息，违反
+    /// 「密码永不进入日志」。
     pub fn from_toml(text: &str) -> PostgresResult<Self> {
-        let mut config: Self = toml::from_str(text)
-            .map_err(|error| PostgresError::Config(format!("TOML 解析失败: {error}")))?;
+        let mut config: Self = toml::from_str(text).map_err(|error| {
+            PostgresError::Config(format!("TOML 解析失败: {}", error.message()))
+        })?;
         if let Some(password) = env_optional(ENV_PASSWORD) {
             config.password = password;
         }
