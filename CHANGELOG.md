@@ -8,6 +8,14 @@
 
 ## [Unreleased]
 
+### 新增
+
+- 三类合规测试（特性 002）：
+  - `tests/tdd_contracts.rs`：公开接口契约全部 12 个入口的行为契约与 `// TDD-PROBE:` 红绿表（变异探测见 PR 描述）；
+  - `tests/sdd_spec.rs`：`docs/标准.md` §1–§5 章节的 `// SPEC-MAP:` 1:1 可执行对照；
+  - `tests/aidd_boundary.rs`：8 条对抗/边界用例与 `// AIDD:` 人工复核表。
+- `tests/live_postgres.rs`：真实 PostgreSQL 的 live 用例（建连 / 结构化探活 / 唯一名临时表往返与清理 / close 收尾），默认 `#[ignore]`，凭据只读环境变量，运行方式见 `scripts/live/README.md`。
+
 ## [0.1.0] - 2026-09-21
 
 ### 新增
