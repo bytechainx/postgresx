@@ -264,6 +264,16 @@ pub fn error_kind_from_sqlstate(code: &str) -> ErrorKind {
 /// 由 SQLSTATE 构造带上下文的 [`PostgresError`]。
 ///
 /// 消息统一带 `postgres sqlstate=<code>` 前缀，便于日志检索。
+///
+/// # Examples
+///
+/// ```
+/// use postgresx::error_from_sqlstate;
+///
+/// // 23505 = unique_violation（Class 23 → 参数/约束类错误）
+/// let error = error_from_sqlstate("23505", "duplicate key value violates unique constraint");
+/// assert!(error.to_string().contains("postgres sqlstate=23505"));
+/// ```
 #[must_use]
 pub fn error_from_sqlstate(code: &str, message: impl Into<String>) -> PostgresError {
     let kind = error_kind_from_sqlstate(code);
