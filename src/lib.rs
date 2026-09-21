@@ -1,7 +1,7 @@
 //! `postgresx` —— PostgreSQL 适配器：连接池、参数化 SQL、事务、迁移与 rustls TLS。
 //!
 //! 本 crate 是零内部依赖的标准组件库，只依赖 crates.io 公开包，
-//! 可直接 `cargo publish` 并被任意 Rust 工程复用。
+//! 可被任意 Rust 工程以源码或 git 依赖方式复用。
 //!
 //! # 快速开始
 //!

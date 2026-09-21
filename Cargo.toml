@@ -7,7 +7,7 @@ description = "PostgreSQL adapter with pooled parameterized SQL, transactions, m
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/bytechainx/postgresx"
 homepage = "https://github.com/bytechainx/postgresx"
-documentation = "https://docs.rs/postgresx"
+documentation = "https://github.com/bytechainx/postgresx#readme"
 readme = "README.md"
 keywords = ["postgres", "postgresql", "database", "sql", "pool"]
 categories = ["database", "asynchronous"]
@@ -39,7 +39,3 @@ webpki-roots = "0.26"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

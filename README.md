@@ -15,8 +15,11 @@
 
 ## 安装
 
-```bash
-cargo add postgresx
+本 crate **不发布到 crates.io**，通过 git 依赖引入：
+
+```toml
+[dependencies]
+postgresx = { git = "https://github.com/bytechainx/postgresx" }
 ```
 
 需要异步运行时（`tokio`）；`tokio-postgres` 的历史类型支持（`chrono` / `serde_json` / `uuid`）
