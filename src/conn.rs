@@ -15,6 +15,7 @@ use tokio_postgres::types::ToSql;
 use tokio_postgres::Row;
 
 use crate::error::{map_tokio_error, PostgresError, PostgresResult};
+use crate::guard::PooledObjectGuard;
 use crate::tx::PgTransaction;
 
 /// 单次 `COPY IN` 默认最大载荷（16 MiB）。
@@ -27,43 +28,6 @@ pub const DEFAULT_COPY_OUT_MAX_BYTES: usize = 16 * 1024 * 1024;
 pub struct PgConnection {
     pub(crate) client: Option<Object>,
     pub(crate) operation_timeout: Duration,
-}
-
-/// 池对象取消守卫。
-///
-/// 只有异步操作**明确**完成并调用 [`PooledObjectGuard::release`] 才会归还连接。
-/// 外层 timeout、任务 abort 或 future 被 drop 时，`Drop` 会把连接从池中分离，
-/// 因此未知状态的连接（可能仍处于事务中）不会污染下一个借用者。
-pub(crate) struct PooledObjectGuard {
-    object: Option<Object>,
-}
-
-impl PooledObjectGuard {
-    pub(crate) fn new(object: Object) -> Self {
-        Self {
-            object: Some(object),
-        }
-    }
-
-    pub(crate) fn object(&self) -> PostgresResult<&Object> {
-        self.object
-            .as_ref()
-            .ok_or_else(|| PostgresError::Backend("postgres 连接守卫为空".to_string()))
-    }
-
-    pub(crate) fn release(mut self) -> PostgresResult<Object> {
-        self.object
-            .take()
-            .ok_or_else(|| PostgresError::Backend("postgres 连接守卫重复释放".to_string()))
-    }
-}
-
-impl Drop for PooledObjectGuard {
-    fn drop(&mut self) {
-        if let Some(object) = self.object.take() {
-            drop(Object::take(object));
-        }
-    }
 }
 
 impl PgConnection {

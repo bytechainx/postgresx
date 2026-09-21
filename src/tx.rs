@@ -18,8 +18,8 @@ use deadpool_postgres::Object;
 use tokio_postgres::types::ToSql;
 use tokio_postgres::Row;
 
-use crate::conn::PooledObjectGuard;
 use crate::error::{map_tokio_error, PostgresError, PostgresResult};
+use crate::guard::PooledObjectGuard;
 
 /// 事务状态。
 #[non_exhaustive]
