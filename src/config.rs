@@ -1085,7 +1085,14 @@ max_pool_size = 7
 acquire_timeout_ms = 3000
 operation_timeout_ms = 8000
 "#;
+        // `from_toml` 在进程环境存在 ENV_PASSWORD 时会注入密码（live 门禁会导出凭据），
+        // 因此本用例先临时摘除该变量，确保断言的是「TOML 自身不携带密码」。
+        let saved = env::var(ENV_PASSWORD).ok();
+        env::remove_var(ENV_PASSWORD);
         let config = PostgresConfig::from_toml(text).expect("TOML 解析");
+        if let Some(value) = saved {
+            env::set_var(ENV_PASSWORD, value);
+        }
         assert_eq!(config.port, 6543);
         assert_eq!(config.max_pool_size, 7);
         assert_eq!(config.acquire_timeout, Duration::from_millis(3000));
