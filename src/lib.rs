@@ -93,6 +93,7 @@
 mod config;
 mod conn;
 mod error;
+mod guard;
 mod migration;
 mod pool;
 mod resilience;
