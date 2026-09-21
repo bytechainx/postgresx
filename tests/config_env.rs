@@ -1,3 +1,9 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unreachable
+)]
 //! 配置：校验正/反用例、环境变量与 URL 解析、密码脱敏、默认值。
 
 use std::sync::Mutex;

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unreachable
+)]
 //! 不可达地址：`ping` / `health_check` / `connect` 必须返回 `Err` 而非 panic 或挂起。
 
 use std::time::Duration;

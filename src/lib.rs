@@ -77,6 +77,15 @@
 //! [`Migrator::verify`] 是启动默认入口，**只**校验 checksum 与未知版本，绝不自动执行 DDL；
 //! 需要执行 pending 迁移时必须显式调用 [`Migrator::apply`]。
 
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unreachable
+    )
+)]
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]

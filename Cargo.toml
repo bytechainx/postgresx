@@ -11,7 +11,19 @@ documentation = "https://github.com/bytechainx/postgresx#readme"
 readme = "README.md"
 keywords = ["postgres", "postgresql", "database", "sql", "pool"]
 categories = ["database", "asynchronous"]
-include = ["src/**/*", "tests/**/*", "examples/**/*", "README.md", "LICENSE-*", "Cargo.toml"]
+include = [
+    "src/**/*",
+    "tests/**/*",
+    "benches/**/*",
+    "docs/**/*",
+    "examples/**/*",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTEXT.md",
+    "CONTRIBUTING.md",
+    "LICENSE-*",
+    "Cargo.toml",
+]
 
 [dependencies]
 bytes = "1"
@@ -39,3 +51,20 @@ webpki-roots = "0.26"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+
+[[bench]]
+name = "hot_path"
+harness = false
+
+[lints.rust]
+private_interfaces = "deny"
+private_bounds = "deny"
+unused_must_use = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unreachable = "deny"
+todo = "deny"
+unimplemented = "deny"
