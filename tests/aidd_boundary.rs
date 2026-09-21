@@ -9,7 +9,7 @@
 //! 候选由 AI 生成，逐条人工复核后仅保留「结论=保留」项；丢弃项登记于 PR 描述。
 //! 全部离线，不依赖真实 PostgreSQL。
 //!
-//! // AIDD: toml_password_key_rejected | 来源=AI | 复核=ZoneCNH/2026-09-22 | 依据=标准.md §2 密码不是公开字段（TOML 拒绝） | 结论=保留
+//! // AIDD: toml_password_key_rejected | 来源=AI | 复核=ZoneCNH/2026-09-22 | 依据=标准.md §2 TOML 拒绝凭据且密码永不进入日志 | 结论=保留
 //! // AIDD: url_ipv6_trailing_junk_rejected | 来源=AI | 复核=ZoneCNH/2026-09-22 | 依据=标准.md §2 URL 解析 fail-loud | 结论=保留
 //! // AIDD: url_percent_encoding_and_unicode | 来源=AI | 复核=ZoneCNH/2026-09-22 | 依据=标准.md §2 四入口等价与转义 | 结论=保留
 //! // AIDD: migration_name_length_boundary | 来源=AI | 复核=ZoneCNH/2026-09-22 | 依据=标准.md §4 迁移元数据校验 | 结论=保留
@@ -25,11 +25,8 @@ use postgresx::{
     MigrationStatus, PostgresConfig, PostgresError, PostgresPool, SslMode,
 };
 
-/// 边界：TOML 里夹带 `password`——凭据走私必须 fail-closed，不得构造出配置。
-///
-/// 已知偏差（2026-09-22 实测并已上报，按「测试不改生产代码」口径保留）：`toml` crate 的
-/// 解析错误 `Display` 会回显出错源码行，故本用例不断言「错误消息不含凭据」——
-/// 当前 `PostgresConfig::from_toml` 会把该行原文带进 `PostgresError::Config` 消息。
+/// 边界：TOML 里夹带 `password`——凭据走私必须 fail-closed，不得构造出配置，
+/// 且错误消息不得回显配置原文（`toml` 的 `Display` 会带出错源码行，须改用 `message()`）。
 #[test]
 fn toml_password_key_rejected() {
     let text = r#"
@@ -40,6 +37,16 @@ password = "smuggled-secret"
 "#;
     let error = PostgresConfig::from_toml(text).expect_err("TOML 中的 password 必须被拒");
     assert!(matches!(error, PostgresError::Config(_)));
+    // 密码永不进入日志：错误消息不得包含出错源码行里的凭据取值。
+    let rendered = error.to_string();
+    assert!(
+        !rendered.contains("smuggled-secret"),
+        "错误消息回显了凭据: {rendered}"
+    );
+    assert!(
+        !rendered.contains("password ="),
+        "错误消息回显了配置源码行: {rendered}"
+    );
 
     // 去掉凭据键后同一份 TOML 正常解析：拒绝来自 `password` 键本身，
     // 且 TOML 通道无法把密码注入配置（密码只能经 env / URL / builder）。
