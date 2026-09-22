@@ -174,6 +174,25 @@ fn deadline_error(op: &str, attempts: u32, config: &PgRetryConfig) -> PostgresEr
 /// 同步重试，按 [`PgRetryConfig`] 指数退避。
 ///
 /// `f` 至少被调用一次；不可重试的错误立即返回。
+///
+/// # 阻塞语义
+///
+/// 本函数在重试等待期间调用 [`std::thread::sleep`]，**会阻塞当前线程**。
+/// 仅适用于启动阶段、同步工具上下文或已确认不在异步运行时工作线程上执行的场景。
+///
+/// # 误用风险
+///
+/// 在 tokio 多线程 runtime 的工作线程上调用本函数会导致该线程被长时间占用，
+/// 极端情况下可能引发工作线程饥饿。异步上下文中应使用 [`with_retry_async`]
+/// （其退避走 [`tokio::time::sleep`]，不阻塞工作线程）。
+///
+/// # 典型调用场景
+///
+/// - 应用启动阶段的同步配置校验/连接预检；
+/// - 同步测试辅助函数（`tests/pure_functions.rs` 中的离线重试逻辑判定）；
+/// - 非异步工具脚本。
+///
+/// 若不确定当前上下文是否有异步运行时，优先使用 [`with_retry_async`]。
 pub fn with_retry_sync<T, F>(config: &PgRetryConfig, op: &str, mut f: F) -> PostgresResult<T>
 where
     F: FnMut() -> PostgresResult<T>,
