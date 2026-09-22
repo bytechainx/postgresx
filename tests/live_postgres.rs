@@ -11,7 +11,7 @@
 //! ```bash
 //! set -a; source /home/workspace/sre/secrets/env/postgresx.env; set +a
 //! cd /home/workspace/bytechainx/postgresx
-//! CARGO_TARGET_DIR=/home/workspace/bytechainx/.cargo-target \
+//! CARGO_TARGET_DIR=/home/workspace/bytechainx/.cargo/target \
 //!   cargo test --test live_postgres -- --ignored --test-threads=1
 //! ```
 //!
