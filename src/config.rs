@@ -21,7 +21,6 @@
 //!
 //! 见模块内 `ENV_*` 常量（[`ENV_HOST`] ... [`ENV_TLS_CLIENT_KEY`]）。
 
-use std::env;
 use std::fmt;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
@@ -32,10 +31,13 @@ use serde::Deserialize as _;
 use crate::error::{PostgresError, PostgresResult};
 
 mod builder;
+mod envvars;
 mod url;
+mod validate;
 
 pub use builder::PostgresConfigBuilder;
 
+use envvars::env_optional;
 use url::parse_url;
 
 /// 默认端口。
@@ -267,102 +269,6 @@ impl fmt::Debug for PostgresConfig {
 }
 
 impl PostgresConfig {
-    /// 从 `FOUNDATIONX_POSTGRESX_*` 加载。
-    ///
-    /// - 若 [`ENV_URL`] 非空，先按 URL 解析作为基底，再逐字段覆盖；
-    /// - 否则 [`ENV_HOST`] / [`ENV_DATABASE`] / [`ENV_USER`] 必须显式提供；
-    /// - 末尾执行 [`Self::validate`]。
-    pub fn from_env() -> PostgresResult<Self> {
-        let url = env_optional(ENV_URL);
-        let mut config = match url.as_deref() {
-            Some(raw) => parse_url(raw)?,
-            None => Self::default(),
-        };
-
-        if url.is_none() {
-            let mut missing = Vec::new();
-            match env_optional(ENV_HOST) {
-                Some(value) => config.host = value,
-                None => missing.push(ENV_HOST),
-            }
-            match env_optional(ENV_DATABASE) {
-                Some(value) => config.database = value,
-                None => missing.push(ENV_DATABASE),
-            }
-            match env_optional(ENV_USER) {
-                Some(value) => config.user = value,
-                None => missing.push(ENV_USER),
-            }
-            if !missing.is_empty() {
-                return Err(PostgresError::Config(format!(
-                    "缺少环境变量: {}（或改用 {ENV_URL}）",
-                    missing.join(", ")
-                )));
-            }
-        } else {
-            if let Some(value) = env_optional(ENV_HOST) {
-                config.host = value;
-            }
-            if let Some(value) = env_optional(ENV_DATABASE) {
-                config.database = value;
-            }
-            if let Some(value) = env_optional(ENV_USER) {
-                config.user = value;
-            }
-        }
-
-        if let Some(value) = env_optional(ENV_PASSWORD) {
-            config.password = value;
-        }
-        if let Some(value) = env_optional(ENV_SSLMODE) {
-            config.sslmode = SslMode::parse(&value)?;
-        }
-        if let Some(value) = env_optional(ENV_PORT) {
-            config.port = parse_env(value, ENV_PORT, |raw| raw.parse::<u16>().ok())?;
-        }
-        if let Some(value) = env_optional(ENV_MAX_POOL_SIZE) {
-            config.max_pool_size =
-                parse_env(value, ENV_MAX_POOL_SIZE, |raw| raw.parse::<usize>().ok())?;
-        }
-        if let Some(value) = env_optional(ENV_APPLICATION_NAME) {
-            config.application_name = Some(value);
-        }
-        if let Some(value) = env_optional(ENV_CONNECT_TIMEOUT_MS) {
-            config.connect_timeout = Some(Duration::from_millis(parse_env(
-                value,
-                ENV_CONNECT_TIMEOUT_MS,
-                |raw| raw.parse::<u64>().ok(),
-            )?));
-        }
-        if let Some(value) = env_optional(ENV_ACQUIRE_TIMEOUT_MS) {
-            config.acquire_timeout =
-                Duration::from_millis(parse_env(value, ENV_ACQUIRE_TIMEOUT_MS, |raw| {
-                    raw.parse::<u64>().ok()
-                })?);
-        }
-        if let Some(value) = env_optional(ENV_OPERATION_TIMEOUT_MS) {
-            config.operation_timeout =
-                Duration::from_millis(parse_env(value, ENV_OPERATION_TIMEOUT_MS, |raw| {
-                    raw.parse::<u64>().ok()
-                })?);
-        }
-        if let Some(value) = env_optional(ENV_TLS_CA_FILE) {
-            config.tls_ca_file = Some(PathBuf::from(value));
-        }
-        if let Some(value) = env_optional(ENV_TLS_SERVER_NAME) {
-            config.tls_server_name = Some(value);
-        }
-        if let Some(value) = env_optional(ENV_TLS_CLIENT_CERT) {
-            config.tls_client_cert = Some(PathBuf::from(value));
-        }
-        if let Some(value) = env_optional(ENV_TLS_CLIENT_KEY) {
-            config.tls_client_key = Some(PathBuf::from(value));
-        }
-
-        config.validate()?;
-        Ok(config)
-    }
-
     /// 从 TOML 字符串解析并校验。
     ///
     /// 字段名与结构体字段一致；超时字段为毫秒整数：
@@ -432,84 +338,6 @@ impl PostgresConfig {
     #[must_use]
     pub fn builder() -> PostgresConfigBuilder {
         PostgresConfigBuilder::default()
-    }
-
-    /// 校验配置合法性。
-    ///
-    /// 覆盖：必填字段、端口/池上限非零、超时非零、mTLS 成对、
-    /// 以及「非 loopback 必须 `sslmode=require`」。
-    pub fn validate(&self) -> PostgresResult<()> {
-        if self.host.trim().is_empty() {
-            return Err(PostgresError::Config(
-                "PostgresConfig.host 不能为空".to_string(),
-            ));
-        }
-        if self.database.trim().is_empty() {
-            return Err(PostgresError::Config(
-                "PostgresConfig.database 不能为空".to_string(),
-            ));
-        }
-        if self.user.trim().is_empty() {
-            return Err(PostgresError::Config(
-                "PostgresConfig.user 不能为空".to_string(),
-            ));
-        }
-        if self.port == 0 {
-            return Err(PostgresError::Config(
-                "PostgresConfig.port 不能为 0".to_string(),
-            ));
-        }
-        if self.max_pool_size == 0 {
-            return Err(PostgresError::Config(
-                "PostgresConfig.max_pool_size 不能为 0".to_string(),
-            ));
-        }
-        if self
-            .connect_timeout
-            .is_some_and(|timeout| timeout.is_zero())
-            || self.acquire_timeout.is_zero()
-            || self.operation_timeout.is_zero()
-        {
-            return Err(PostgresError::Config(
-                "PostgresConfig timeout 必须大于零".to_string(),
-            ));
-        }
-        if self.sslmode != SslMode::Require && !host_is_local(&self.host) {
-            return Err(PostgresError::Config(
-                "远程 PostgreSQL 必须使用 sslmode=require；disable/prefer 仅允许本机".to_string(),
-            ));
-        }
-        if let Some(path) = &self.tls_ca_file {
-            if path.as_os_str().is_empty() {
-                return Err(PostgresError::Config(
-                    "PostgresConfig.tls_ca_file 不能为空路径".to_string(),
-                ));
-            }
-        }
-        if let Some(name) = &self.tls_server_name {
-            if name.trim().is_empty() {
-                return Err(PostgresError::Config(
-                    "PostgresConfig.tls_server_name 不能为空".to_string(),
-                ));
-            }
-        }
-        match (&self.tls_client_cert, &self.tls_client_key) {
-            (None, None) => {}
-            (Some(cert), Some(key)) => {
-                if cert.as_os_str().is_empty() || key.as_os_str().is_empty() {
-                    return Err(PostgresError::Config(
-                        "PostgresConfig.tls_client_cert/key 不能为空路径".to_string(),
-                    ));
-                }
-            }
-            _ => {
-                return Err(PostgresError::Config(
-                    "PostgresConfig mTLS 需要同时设置 tls_client_cert 与 tls_client_key"
-                        .to_string(),
-                ));
-            }
-        }
-        Ok(())
     }
 
     /// 转换为 deadpool-postgres 配置（不含 TLS 握手，握手见 [`crate::pool`]）。
@@ -584,21 +412,11 @@ pub fn host_is_local(host: &str) -> bool {
         || bare.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback())
 }
 
-fn env_optional(key: &str) -> Option<String> {
-    env::var(key).ok().filter(|value| !value.trim().is_empty())
-}
-
-fn parse_env<T, F>(value: String, key: &str, parse: F) -> PostgresResult<T>
-where
-    F: FnOnce(&str) -> Option<T>,
-{
-    parse(&value)
-        .ok_or_else(|| PostgresError::Config(format!("环境变量 {key} 不是合法数值: `{value}`")))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    // 仅测试用到的 `std::env` 写在测试模块内（避免非测试构建 unused import）。
+    use std::env;
 
     #[test]
     fn defaults_are_stable() {
