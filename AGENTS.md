@@ -18,7 +18,13 @@
 src/
 ├── lib.rs          # 入口 + 公共 API re-export（#![deny(missing_docs)] / #![forbid(unsafe_code)]）
 ├── error.rs        # PostgresError（#[non_exhaustive]）+ ErrorKind + SQLSTATE 分类 + PostgresResult 别名
-├── config.rs       # PostgresConfig + PostgresConfigBuilder + SslMode + from_env/from_toml/from_url + validate
+├── config.rs       # PostgresConfig 门面：*const 常量、SslMode、定义与 Default/Debug、
+│                   # from_toml/from_url/has_password/builder/to_deadpool_config、host_is_local、内联测试
+├── config/
+│   ├── builder.rs   # PostgresConfigBuilder（链式覆盖）
+│   ├── envvars.rs   # from_env 与 env 读取辅助（env_optional / parse_env）
+│   ├── url.rs       # postgres:// URL 解析
+│   └── validate.rs  # validate：必填/非零/mTLS 成对/非 loopback 必须 require
 ├── pool.rs         # PostgresPool：acquire/execute/query/with_transaction/ping/health_check/stats/close
 ├── conn.rs         # PgConnection：参数化 SQL + COPY IN/OUT 原语与载荷上限常量
 ├── tx.rs           # PgTransaction + TxStatus 状态机

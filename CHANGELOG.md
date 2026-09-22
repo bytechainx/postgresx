@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-22
+
 ### 新增
 
 - 三类合规测试（特性 002）：
@@ -15,6 +17,23 @@
   - `tests/sdd_spec.rs`：`docs/标准.md` §1–§5 章节的 `// SPEC-MAP:` 1:1 可执行对照；
   - `tests/aidd_boundary.rs`：9 条对抗/边界用例与 `// AIDD:` 人工复核表。
 - `tests/live_postgres.rs`：真实 PostgreSQL 的 live 用例（建连 / 结构化探活 / 唯一名临时表往返与清理 / close 收尾），默认 `#[ignore]`，凭据只读环境变量，运行方式见 `scripts/live/README.md`。
+
+### 变更
+
+- **内部结构改写（公开 API 与可观察契约均不变）**：按 `docs/module-rules.md` §5.5 的手法，把
+  `src/config.rs` 的两块职责下沉为子模块 —— 环境变量加载（`from_env` 与 `env_optional` /
+  `parse_env` 两个 env 读取辅助）→ `src/config/envvars.rs`；配置校验（`validate`）→
+  `src/config/validate.rs`。门面 `src/config.rs` 保留模块文档、`DEFAULT_*` / `ENV_*` 常量、
+  `SslMode`、`PostgresConfig` 定义与 `Default` / `Debug`、serde 辅助（`default_*` / `de_*`）、
+  `from_toml` / `from_url` / `has_password` / 三个 `pub(crate)` 取值器 / `builder` /
+  `to_deadpool_config`、`host_is_local` 与**原有内联测试**。
+  `from_env` 与 `validate` 均为 `pub`，故**公开路径与签名一字未改**；`env_optional` 因同时被门面的
+  `from_toml` 调用而提为 `pub(super)`，`parse_env` 只被同模块的 `from_env` 使用、**保持私有**。
+  子模块名用 `envvars` 而非 `env`，避免 edition 2018 的 uniform path 遮蔽 `std::env`（同 `ossx` 的处理）。
+  `src/config.rs` 生产段 **598 → 414** 行。
+  动机：`module-rules` 是元仓库必需检查，且它审计各仓**默认分支**，故当 `config.rs` 生产段距
+  `MR-STRUCT-007` 的 800 行 ERROR 阈值只剩 202 行时，任一仓的任意改动都可能卡住元仓库的全部 PR。
+  属**纯搬移**（行多重集比对确认零代码行丢失），全部 120 项测试与 doctest 结果不变。
 
 ## [0.1.1] - 2026-09-22
 
