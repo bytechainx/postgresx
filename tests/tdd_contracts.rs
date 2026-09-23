@@ -6,7 +6,7 @@
 )]
 //! TDD 行为契约（特性 002）。
 //!
-//! 入口集合 = `specs/002-public-api-compliance-and-test-tiers/contracts/public-api-contract.md`
+//! 入口集合 = `specs/features/002-public-api-compliance-and-test-tiers/contracts/public-api-contract.md`
 //! 登记的 12 个 postgresx 入口。每行描述「对该入口施加的最小语义变异 + 观测到红的用例 +
 //! 本树观测到绿的用例」；本树绿为常态，变异红在 `/tmp/mut-postgresx` 副本上复现（见 PR 描述）。
 //!
