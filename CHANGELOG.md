@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+### 新增
+
+- `tests/e2e_postgres.rs`：核对器口径公开面真连（`e2e_postgres_all_public_api`，默认 `#[ignore]`）。不改运行时行为。
+
 ### 变更
 
 - `with_retry_sync` 文档补充阻塞语义说明：标注其使用 `std::thread::sleep`
