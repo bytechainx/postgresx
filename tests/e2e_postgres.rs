@@ -29,7 +29,7 @@ use postgresx::{
     map_tokio_error, with_retry_async, with_retry_async_no_wait, with_retry_sync, AppliedMigration,
     ChecksumMismatch, ErrorKind, MakeRustlsConnect, Migration, MigrationStatus, Migrator,
     PgRetryConfig, PostgresConfig, PostgresError, PostgresPool, PostgresResult, RustlsConnect,
-    RustlsStream, SslMode, TxStatus, DEFAULT_COPY_IN_MAX_BYTES, DEFAULT_COPY_OUT_MAX_BYTES,
+    SslMode, TxStatus, DEFAULT_COPY_IN_MAX_BYTES, DEFAULT_COPY_OUT_MAX_BYTES,
     DEFAULT_MAX_POOL_SIZE, DEFAULT_PORT, ENV_ACQUIRE_TIMEOUT_MS, ENV_APPLICATION_NAME,
     ENV_CONNECT_TIMEOUT_MS, ENV_DATABASE, ENV_HOST, ENV_MAX_POOL_SIZE, ENV_OPERATION_TIMEOUT_MS,
     ENV_PASSWORD, ENV_PORT, ENV_SSLMODE, ENV_TLS_CA_FILE, ENV_TLS_CLIENT_CERT, ENV_TLS_CLIENT_KEY,
@@ -369,19 +369,22 @@ fn hit_offline_surface() {
         let _ = kind.as_str();
         let _ = kind.is_retryable();
         let _ = kind.into_postgres_error("e2e".to_string());
-        hit("variant", match kind {
-            ErrorKind::Cancelled => "ErrorKind::Cancelled",
-            ErrorKind::Conflict => "ErrorKind::Conflict",
-            ErrorKind::DeadlineExceeded => "ErrorKind::DeadlineExceeded",
-            ErrorKind::Internal => "ErrorKind::Internal",
-            ErrorKind::Invalid => "ErrorKind::Invalid",
-            ErrorKind::Invariant => "ErrorKind::Invariant",
-            ErrorKind::Missing => "ErrorKind::Missing",
-            ErrorKind::Serialization => "ErrorKind::Serialization",
-            ErrorKind::Transient => "ErrorKind::Transient",
-            ErrorKind::Unavailable => "ErrorKind::Unavailable",
-            _ => unreachable!("ErrorKind 新变体须补清单"),
-        });
+        hit(
+            "variant",
+            match kind {
+                ErrorKind::Cancelled => "ErrorKind::Cancelled",
+                ErrorKind::Conflict => "ErrorKind::Conflict",
+                ErrorKind::DeadlineExceeded => "ErrorKind::DeadlineExceeded",
+                ErrorKind::Internal => "ErrorKind::Internal",
+                ErrorKind::Invalid => "ErrorKind::Invalid",
+                ErrorKind::Invariant => "ErrorKind::Invariant",
+                ErrorKind::Missing => "ErrorKind::Missing",
+                ErrorKind::Serialization => "ErrorKind::Serialization",
+                ErrorKind::Transient => "ErrorKind::Transient",
+                ErrorKind::Unavailable => "ErrorKind::Unavailable",
+                _ => unreachable!("ErrorKind 新变体须补清单"),
+            },
+        );
     }
     hit("fn", "ErrorKind::as_str");
     hit("fn", "ErrorKind::into_postgres_error");
@@ -567,7 +570,11 @@ fn hit_offline_surface() {
         assert!(value.starts_with("FOUNDATIONX_POSTGRESX_"));
         hit("const", id);
     }
-    let _ = (MIGRATION_LOCK_KEY1, MIGRATION_LOCK_KEY2, SCHEMA_MIGRATIONS_TABLE);
+    let _ = (
+        MIGRATION_LOCK_KEY1,
+        MIGRATION_LOCK_KEY2,
+        SCHEMA_MIGRATIONS_TABLE,
+    );
     hit("const", "MIGRATION_LOCK_KEY1");
     hit("const", "MIGRATION_LOCK_KEY2");
     hit("const", "SCHEMA_MIGRATIONS_TABLE");
@@ -668,7 +675,7 @@ async fn e2e_postgres_all_public_api() {
             database,
             sslmode
         );
-        let from_url = PostgresConfig::from_url(&url).expect("from_url");
+        let _from_url = PostgresConfig::from_url(&url).expect("from_url");
         hit("fn", "PostgresConfig::from_url");
 
         hit("type", "PostgresConfigBuilder");
@@ -718,7 +725,7 @@ async fn e2e_postgres_all_public_api() {
         let pool = PostgresPool::connect(config).await.expect("connect");
         hit("type", "PostgresPool");
         hit("fn", "PostgresPool::connect");
-        if matches!(pool_ssl_is_tls(&sslmode), true) {
+        if pool_ssl_is_tls(&sslmode) {
             hit("fn", "RustlsStream");
         }
         let _ = PostgresPool::new(built).expect("pool new");
@@ -764,7 +771,7 @@ async fn e2e_postgres_all_public_api() {
         hit("fn", "PostgresPool::acquire_with");
 
         let retry = PgRetryConfig::fixed(2, Duration::ZERO);
-        let _ = with_retry_async(&retry, "e2e-async", || {
+        with_retry_async(&retry, "e2e-async", || {
             let pool = pool.clone();
             async move {
                 pool.ping().await?;
@@ -774,7 +781,7 @@ async fn e2e_postgres_all_public_api() {
         .await
         .expect("retry async");
         hit("fn", "with_retry_async");
-        let _ = with_retry_async_no_wait(&retry, "e2e-async-nw", || {
+        with_retry_async_no_wait(&retry, "e2e-async-nw", || {
             let pool = pool.clone();
             async move {
                 pool.ping().await?;
@@ -885,7 +892,7 @@ async fn e2e_postgres_all_public_api() {
             hit("fn", "PgTransaction::commit");
         }
         {
-            let mut tx = pool.begin().await.expect("begin2");
+            let tx = pool.begin().await.expect("begin2");
             tx.rollback().await.expect("rollback");
             hit("fn", "PgTransaction::rollback");
         }
@@ -904,12 +911,12 @@ async fn e2e_postgres_all_public_api() {
                 .expect("conn query");
             hit("fn", "PgConnection::query");
             let _ = conn
-                .query_one(&format!("SELECT 1"), &[])
+                .query_one("SELECT 1", &[])
                 .await
                 .expect("conn one");
             hit("fn", "PgConnection::query_one");
             let _ = conn
-                .query_opt(&format!("SELECT 1 WHERE false"), &[])
+                .query_opt("SELECT 1 WHERE false", &[])
                 .await
                 .expect("conn opt");
             hit("fn", "PgConnection::query_opt");
@@ -928,7 +935,7 @@ async fn e2e_postgres_all_public_api() {
                 .await
                 .expect("conn copy out");
             hit("fn", "PgConnection::copy_out_bytes");
-            let mut nested = conn.begin().await.expect("conn begin");
+            let nested = conn.begin().await.expect("conn begin");
             hit("fn", "PgConnection::begin");
             nested.rollback().await.expect("nested rollback");
         }
@@ -1033,4 +1040,3 @@ fn pool_ssl_is_tls(sslmode: &str) -> bool {
         Ok(SslMode::Prefer | SslMode::Require)
     )
 }
-

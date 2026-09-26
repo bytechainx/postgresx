@@ -1193,10 +1193,13 @@ fn tls_probe_config(mode: SslMode) -> PostgresConfig {
             builder = builder.password(password);
         }
     }
-    builder.build().expect("TLS 探测配置应合法")
+    builder
+        .tls_server_name("postgresx-live-untrusted.invalid")
+        .build()
+        .expect("TLS 探测配置应合法")
 }
 
-/// sslmode=require：服务端证书非公共 CA 签发时必须 fail-closed（无 insecure 旁路）。
+/// sslmode=require：证书名与探测 SNI 不一致时必须 fail-closed（无 insecure 旁路）。
 ///
 /// 环境前提：本机服务端 `ssl=on` 且证书非公共 CA / 无 `127.0.0.1` IP SAN。
 /// 若服务端未来更换为受信证书（含 IP SAN），本用例应改为断言连接成功。
@@ -1227,6 +1230,18 @@ async fn live_tls_require_fails_closed_on_untrusted_cert() {
 #[ignore = "需要真实 PostgreSQL 实例（ssl=on，证书非公共 CA）"]
 async fn live_tls_prefer_fails_closed_when_server_tls_on() {
     tokio::time::timeout(LIVE_TIMEOUT, async {
+        let host = env_or(ENV_HOST, "127.0.0.1");
+        if !host_is_local(&host) {
+            let error = PostgresConfig::builder()
+                .host(host)
+                .database(std::env::var(ENV_DATABASE).expect("DATABASE"))
+                .user(std::env::var(ENV_USER).expect("USER"))
+                .sslmode(SslMode::Prefer)
+                .build()
+                .expect_err("远程 prefer 必须被 validate 拒绝");
+            assert!(matches!(error, PostgresError::Config(_)));
+            return;
+        }
         let pool = PostgresPool::new(tls_probe_config(SslMode::Prefer))
             .expect("本地校验与连接器构建应成功");
         let result = tokio::time::timeout(Duration::from_secs(10), pool.ping()).await;
