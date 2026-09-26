@@ -50,7 +50,9 @@ tracing = "0.1"
 webpki-roots = "0.26"
 
 [dev-dependencies]
+deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+tokio-postgres = { version = "0.7", default-features = false, features = ["runtime"] }
 
 [[bench]]
 name = "hot_path"
