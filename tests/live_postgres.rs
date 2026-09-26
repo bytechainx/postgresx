@@ -58,8 +58,8 @@ use postgresx::{
     map_tokio_error, with_retry_async, with_retry_async_no_wait, with_retry_sync, ErrorKind,
     MakeRustlsConnect, Migration, Migrator, PgRetryConfig, PostgresConfig, PostgresError,
     PostgresPool, SslMode, TxStatus, DEFAULT_COPY_IN_MAX_BYTES, DEFAULT_MAX_POOL_SIZE,
-    DEFAULT_PORT, ENV_DATABASE, ENV_HOST, ENV_PASSWORD, ENV_PORT, ENV_SSLMODE, ENV_USER,
-    MIGRATION_LOCK_KEY1, MIGRATION_LOCK_KEY2, SCHEMA_MIGRATIONS_TABLE,
+    DEFAULT_PORT, ENV_DATABASE, ENV_HOST, ENV_PASSWORD, ENV_PORT, ENV_SSLMODE, ENV_TLS_SERVER_NAME,
+    ENV_USER, MIGRATION_LOCK_KEY1, MIGRATION_LOCK_KEY2, SCHEMA_MIGRATIONS_TABLE,
 };
 
 /// live 用例整体超时上限（含建连、往返与清理）。
@@ -276,9 +276,14 @@ async fn live_config_entries_toml_url_builder() {
         }
 
         // from_toml：非秘密字段来自 TOML，密码经 ENV_PASSWORD 注入（E2 真连服验证注入有效）。
-        let toml_text = format!(
+        let mut toml_text = format!(
             "host = \"{host}\"\nport = {port}\ndatabase = \"{database}\"\nuser = \"{user}\"\nsslmode = \"{sslmode}\"\n"
         );
+        if let Ok(server_name) = std::env::var(ENV_TLS_SERVER_NAME) {
+            if !server_name.is_empty() {
+                toml_text.push_str(&format!("tls_server_name = \"{server_name}\"\n"));
+            }
+        }
         let from_toml = PostgresConfig::from_toml(&toml_text).expect("TOML 解析应成功");
         assert_eq!(from_toml.port, port);
         assert_eq!(from_toml.max_pool_size, DEFAULT_MAX_POOL_SIZE);
@@ -311,7 +316,12 @@ async fn live_config_entries_toml_url_builder() {
             database,
             sslmode
         );
-        let from_url = PostgresConfig::from_url(&url).expect("URL 解析应成功");
+        let mut from_url = PostgresConfig::from_url(&url).expect("URL 解析应成功");
+        if let Ok(server_name) = std::env::var(ENV_TLS_SERVER_NAME) {
+            if !server_name.is_empty() {
+                from_url.tls_server_name = Some(server_name);
+            }
+        }
         assert_eq!(from_url.host, host);
         assert_eq!(from_url.port, port);
         assert_eq!(from_url.database, database);
