@@ -1,6 +1,6 @@
 # postgresx 公开 API
 
-**版本 / 角色**：`postgresx 0.1.0` · PostgreSQL 适配器（连接池 + 参数化 SQL + 事务 + 迁移 + rustls TLS + 重试）
+**版本 / 角色**：`postgresx 0.1.2` · PostgreSQL 适配器（连接池 + 参数化 SQL + 事务 + 迁移 + rustls TLS + 重试）
 
 ## 公开消费面
 
