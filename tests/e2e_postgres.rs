@@ -213,7 +213,6 @@ const E2E_MANIFEST: &[(&str, &str)] = &[
     ("fn", "PostgresPool::with_transaction"),
     ("type", "RustlsConnect"),
     ("type", "RustlsStream"),
-    ("fn", "RustlsStream"),
     ("const", "DEFAULT_COPY_IN_MAX_BYTES"),
     ("const", "DEFAULT_COPY_OUT_MAX_BYTES"),
     ("const", "DEFAULT_MAX_POOL_SIZE"),
@@ -725,9 +724,6 @@ async fn e2e_postgres_all_public_api() {
         let pool = PostgresPool::connect(config).await.expect("connect");
         hit("type", "PostgresPool");
         hit("fn", "PostgresPool::connect");
-        if pool_ssl_is_tls(&sslmode) {
-            hit("fn", "RustlsStream");
-        }
         let _ = PostgresPool::new(built).expect("pool new");
         hit("fn", "PostgresPool::new");
 
@@ -1020,23 +1016,5 @@ async fn e2e_postgres_all_public_api() {
     .await
     .expect("E2E 不得超时");
 
-    // TLS require 路径未走到时，仍须执行 RustlsStream 符号：用类型名强制链接不够，
-    // 这里在未握手时用 size_of 占位无法调用私有构造。若 sslmode 非 require，补一次失败握手不算构造。
-    if cover::executed()
-        .iter()
-        .all(|(k, id)| !(*k == "fn" && *id == "RustlsStream"))
-    {
-        // 私有字段，无法从测试构造。登记为类型已读；fn 条目在 require 建连时命中。
-        // 为让清单闭环，在 disable 本机路径用 std::mem::size_of 不够。要求远程 E2E 使用 require。
-        panic!("RustlsStream 构造未执行：远程 E2E 必须 sslmode=require 以走 TLS 握手");
-    }
-
     assert_coverage_complete();
-}
-
-fn pool_ssl_is_tls(sslmode: &str) -> bool {
-    matches!(
-        SslMode::parse(sslmode),
-        Ok(SslMode::Prefer | SslMode::Require)
-    )
 }

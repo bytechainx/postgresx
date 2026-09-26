@@ -11,6 +11,7 @@
 ### 新增
 
 - `tests/e2e_postgres.rs`：核对器口径公开面真连（`e2e_postgres_all_public_api`，默认 `#[ignore]`）。不改运行时行为。
+- 去掉清单幽灵条目 `fn RustlsStream`（`public-api` 的 `RustlsStream<S>::poll_*` 不是自由函数）。
 
 ### 变更
 
