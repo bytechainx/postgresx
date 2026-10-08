@@ -1,0 +1,47 @@
+# cargo-deny 配置（bytechainx 15 仓统一模板）
+#
+# 依据：
+# - 组织基线 `security.md` §7 R-SEC-007（P0）：CI 运行 `cargo deny check`
+# - 组织基线 `ci.md` §6：许可证白名单项目自定
+# - 组织基线 `ci.md` §1：供应链 `cargo deny check` → 阻断
+#
+# 许可证白名单只收宽松许可（permissive）。copyleft（LGPL/AGPL/GPL）未列入：
+# 15 仓的 `LGPL-2.1-or-later` / `BSL-1.0` 仅出现在 `OR` 表达式（同时提供 MIT/Apache-2.0），
+# 故无需放行。
+
+[advisories]
+# 未维护依赖（unmaintained）：保持默认告警。
+#
+# 书面例外（依据组织基线 `security.md` §7 R-SEC-008：高危漏洞阻断合并，
+# 除非书面例外 + 期限）：
+#   RUSTSEC-2025-0134 — rustls-pemfile 停维护（仓库 2025-08 归档）
+#     引入路径：tokio-postgres v0.7.18 / deadpool-postgres v0.14.2（传递依赖，本仓无法自行升级）
+#     上游状态：公告称「No safe upgrade is available」
+#     复查触发：上游发布移除 rustls-pemfile 的版本时重评并解除本例外。
+ignore = [
+    { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile 停维护；经 tokio-postgres v0.7.18 / deadpool-postgres v0.14.2 传递引入，上游无安全升级（No safe upgrade available）。书面例外，待上游迁移后解除。" },
+]
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "0BSD",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
