@@ -54,7 +54,7 @@ jobs:
 
 
   msrv:
-    name: msrv 1.85
+    name: msrv 1.89
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
       - name: 安装 MSRV 工具链
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.85"
+          toolchain: "1.89"
 
       - uses: Swatinem/rust-cache@v2
 
