@@ -18,6 +18,7 @@
 #     引入路径：tokio-postgres v0.7.18 / deadpool-postgres v0.14.2（传递依赖，本仓无法自行升级）
 #     上游状态：公告称「No safe upgrade is available」
 #     复查触发：上游发布移除 rustls-pemfile 的版本时重评并解除本例外。
+#     消除期限：2026-12-31（到期前复查；届时若上游仍未迁移则按 R-SEC-008 续期并重记）。
 ignore = [
     { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile 停维护；经 tokio-postgres v0.7.18 / deadpool-postgres v0.14.2 传递引入，上游无安全升级（No safe upgrade available）。书面例外，待上游迁移后解除。" },
 ]
