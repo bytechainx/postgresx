@@ -2,7 +2,7 @@
 name = "postgresx"
 version = "0.1.2"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.89"
 description = "PostgreSQL adapter with pooled parameterized SQL, transactions, migrations and rustls TLS"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/bytechainx/postgresx"

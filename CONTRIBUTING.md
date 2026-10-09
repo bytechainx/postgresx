@@ -63,7 +63,7 @@ cargo package --no-verify --allow-dirty
   rustls 无 insecure 旁路；mTLS 客户端证书与私钥必须成对提供。
 - **迁移默认只读**：`verify()` 绝不执行 DDL，执行 pending 必须显式 `apply()`；
   事务块内禁用语句保守拒绝为 `PostgresError::Unsupported`。
-- edition 2021，MSRV `rust-version = "1.85"`（改动依赖时同步核对）。
+- edition 2021，MSRV `rust-version = "1.89"`（改动依赖时同步核对）。
 
 ## 提交前自检清单
 
