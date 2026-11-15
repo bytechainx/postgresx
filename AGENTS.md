@@ -8,7 +8,7 @@
 
 ## 技术栈
 
-- Rust edition 2021（rust-version 1.85）
+- Rust edition 2021（rust-version 1.89）
 - 关键依赖：`tokio-postgres` / `deadpool-postgres`、`tokio`、`tokio-rustls` / `rustls` / `rustls-native-certs` / `rustls-pemfile` / `webpki-roots`、`serde` / `serde_json`、`sha2`、`thiserror`、`toml`、`tracing`、`futures-util`、`bytes`
 - 不依赖内部框架/私有 crate，零内部耦合
 

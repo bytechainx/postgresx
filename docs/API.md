@@ -7,13 +7,14 @@
 | 入口 | 说明 |
 | --- | --- |
 | `PostgresConfig` / `PostgresConfigBuilder` / `SslMode` | 配置：`from_env` / `from_toml` / `from_url` / `validate` / `builder`；`SslMode::{Disable, Prefer, Require}` |
-| `PostgresPool` | `connect` / `new` / `acquire` / `execute` / `query` / `query_one` / `query_opt` / `with_transaction` / `begin` / `copy_in_bytes` / `copy_out_bytes` / `ping` / `health_check` / `stats` / `close`；`Clone`（内部 `Arc`） |
+| `PostgresPool` | `connect` / `new` / `acquire` / `acquire_with` / `execute` / `query` / `query_one` / `query_opt` / `with_transaction` / `begin` / `copy_in_bytes` / `copy_out_bytes` / `ping` / `health_check` / `stats` / `summary` / `close`；`Clone`（内部 `Arc`） |
+| `PoolStats` / `PostgresHealth` / `BoxFuture` | 池快照统计、结构化健康检查结果、`with_transaction` 闭包返回的 boxed future 类型 |
 | `PgConnection` | 连接句柄：参数化 SQL + `COPY` 原语 + `DEFAULT_COPY_IN_MAX_BYTES` / `DEFAULT_COPY_OUT_MAX_BYTES`（各 16 MiB） |
 | `PgTransaction` / `TxStatus` | 事务句柄与准确状态机（`Active` / `Committed` / `RolledBack` / `Failed`） |
-| `Migrator` / `Migration` / `MigrationStatus` / `MigrationReport` / `ensure_boot_ok` | 迁移：advisory lock + SHA-256 checksum；`verify()` 只校验，不自动执行 DDL |
-| `MakeRustlsConnect` / `build_client_config` / `build_client_config_with_ca` / `build_client_config_with_options` | rustls TLS 连接器：webpki 公共根 + 系统信任库、自定义 CA、mTLS |
-| `with_retry_sync` / `with_retry_async` / `PgRetryConfig` | 指数退避 + 抖动 + 总预算（deadline）的重试，自实现无外部可靠性框架依赖 |
-| `PostgresError` / `PostgresResult` / `ErrorKind` | 统一错误、结果别名与 SQLSTATE 语义分类（`error_from_sqlstate` / `error_kind_from_sqlstate`） |
+| `Migrator` / `Migration` / `MigrationStatus` / `MigrationReport` / `AppliedMigration` / `ensure_boot_ok` | 迁移：advisory lock + SHA-256 checksum；`verify()` 只校验，不自动执行 DDL；常量 `SCHEMA_MIGRATIONS_TABLE` / `MIGRATION_LOCK_KEY1` / `MIGRATION_LOCK_KEY2` |
+| `MakeRustlsConnect` / `RustlsConnect` / `RustlsStream` / `build_client_config` / `build_client_config_with_ca` / `build_client_config_with_options` | rustls TLS 连接器：webpki 公共根 + 系统信任库、自定义 CA、mTLS |
+| `with_retry_sync` / `with_retry_async` / `with_retry_async_no_wait` / `PgRetryConfig` | 指数退避 + 抖动 + 总预算（deadline）的重试，自实现无外部可靠性框架依赖；`PgRetryConfig` 构造面 `new` / `fixed` / `exponential` / `without_jitter` / `with_deadline` / `delay_for_attempt` |
+| `PostgresError` / `PostgresResult` / `ErrorKind` | 统一错误、结果别名与 SQLSTATE 语义分类（`error_from_sqlstate` / `error_kind_from_sqlstate` / `map_pool_error` / `map_tokio_error`） |
 | `Row` / `ToSql` | 重新导出 `tokio_postgres` 的行类型与参数 trait |
 | `ENV_*` / `DEFAULT_*` 常量 | 环境变量名（前缀 `FOUNDATIONX_POSTGRESX_`）与默认值 |
 
