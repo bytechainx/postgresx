@@ -60,6 +60,15 @@
 - **建议**：确认 checklist 的复述范围是否应含全部 CI 必需检查，或注明
   「P0 只列本地三件套 + 打包元数据，CI 扩展项见 workflow」。
 
+## 评审结论（2026-11-15 Owner 裁定）
+
+| 项 | 裁定 | 落实 |
+| --- | --- | --- |
+| C1 | 采纳修正 | `AGENTS.md` rust-version 1.85 → 1.89 |
+| C2 | 补全表格 | `docs/API.md` 公开消费面补齐全部导出项 |
+| C3 | 统一为 `--all-targets` | `checklist.md` P0 与 `docs/标准.md` §5、`CONTRIBUTING.md` 口径一致；doctest 覆盖由 CI `cargo test` 承担（`--all-targets` 不含 doctest，已实测） |
+| C4 | 补全 CI 项 | `checklist.md` P0 增列 `cargo deny check` 与 MSRV `cargo check --all-features` |
+
 ## 不列为候选的已排除项
 
 - `docs/标准.md` 自称版本 `v0.1.2` 与 `Cargo.toml` `0.1.2` 一致（此前工作区侧

@@ -8,13 +8,15 @@
 
 - [ ] `cargo fmt --check`
 - [ ] `cargo clippy --all-targets -- -D warnings`
-- [ ] `cargo test`
+- [ ] `cargo test --all-targets`
 - [ ] `cargo package --no-verify`
+- [ ] `cargo deny check`（CI `cargo deny` job 同口径）
+- [ ] MSRV `cargo check --all-features`（CI `msrv 1.89` job，工具链 1.89）
 
 ## 说明
 
 - 从 crate 根目录运行；执行前核对工作树归属。
-- `cargo test` 含 doctest；不要用会漏 doctest 的 `--all-targets` 替代（本仓 README / CI 已写明变体的除外）。
+- 验收命令口径与 `CONTRIBUTING.md` 门禁三件套及 `docs/标准.md` §5 一致：`cargo test --all-targets`。
 - 不执行 `cargo publish`。README / rustdoc / 元数据不承诺 crates.io 或 docs.rs。
 - 工作区级检查在元仓库执行，见工作区 `README.md`「质量门禁」。
 - 机器全绿不代替已登记的人审，也不产生合入权。
