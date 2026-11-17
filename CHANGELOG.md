@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+### 修正
+
+- `deny.toml` 新增 `RUSTSEC-2026-0543`（chrono 停维护）书面例外：经 tokio-postgres
+  `with-chrono-0_4` feature 传递引入，上游无安全升级；消除期限 2026-12-31。
+  修复 GitLab `main` pipeline `supply-chain` job 失败。
+
 ### 破坏性变更
 
 - MSRV 由 `1.85` 上调至 `1.89`：依赖链中的 `uuid 1.27.0` 要求 rustc 1.89
